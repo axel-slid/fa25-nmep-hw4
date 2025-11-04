@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from .attention import MultiHeadAttention, FeedForwardNN
+from seq2seq.tokenizer.bpe_tokenizer import BPETokenizer
 from seq2seq.data.fr_en import tokenizer
 
 
@@ -79,7 +80,11 @@ class EncoderLayer(nn.Module):
         self.value_length = value_length
 
         # Define any layers you'll need in the forward pass
-        raise NotImplementedError("Need to implement vocab initialization.")
+        self.attn = MultiHeadAttention(num_heads, embedding_dim, qk_length, value_length)
+        self.m = nn.Sequential(nn.Dropout(dropout),
+                               FeedForwardNN(embedding_dim, ffn_hidden_dim))
+
+        #raise NotImplementedError("Need to implement vocab initialization.")
 
     def forward(
         self, x: torch.Tensor, mask: Optional[torch.Tensor] = None
@@ -87,7 +92,10 @@ class EncoderLayer(nn.Module):
         """
         The forward pass of the EncoderLayer.
         """
-        raise NotImplementedError("Need to implement forward pass of EncoderLayer.")
+        x = self.attn.forward(x.clone(), x.clone(), x.clone(), mask)
+        x = self.m.forward(x)
+        return x
+        #raise NotImplementedError("Need to implement forward pass of EncoderLayer.")
 
 
 class Encoder(nn.Module):
@@ -140,12 +148,23 @@ class Encoder(nn.Module):
         # so we'll have to first create some kind of embedding
         # and then use the other layers we've implemented to
         # build out the Transformer encoder.
-        raise NotImplementedError("Need to implement Encoder layers")
+
+        self.embedder = nn.Embedding(vocab_size, embedding_dim)
+        self.encoderlayers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.encoderlayers.append(EncoderLayer(num_heads, embedding_dim, ffn_hidden_dim, qk_length, value_length, dropout))
+        
+        #raise NotImplementedError("Need to implement Encoder layers")
 
 
     def forward(self, x: torch.Tensor, src_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         The forward pass of the Encoder.
         """
-        raise NotImplementedError("Need to implement forward pass of Encoder")
+        x = self.embedder(x)
+        for layer in self.encoderlayers:
+            x = layer.forward(x, src_mask)
+
+        return x
+        #raise NotImplementedError("Need to implement forward pass of Encoder")
 
