@@ -104,7 +104,7 @@ class MultiHeadAttention(nn.Module):
         """
         qk_length = Q.size()[-1]
         lookup = torch.matmul(Q, torch.permute(K, (0, 1, 3, 2)))
-        if mask:
+        if mask is not None:
             lookup = lookup + mask
         scaled_lookup = lookup / np.sqrt(qk_length)
         attention = nn.functional.softmax(scaled_lookup)

@@ -150,6 +150,7 @@ class Encoder(nn.Module):
         # build out the Transformer encoder.
 
         self.embedder = nn.Embedding(vocab_size, embedding_dim)
+        self.positionalencoding = PositionalEncoding(embedding_dim, dropout, max_length)
         self.encoderlayers = nn.ModuleList()
         for _ in range(num_layers):
             self.encoderlayers.append(EncoderLayer(num_heads, embedding_dim, ffn_hidden_dim, qk_length, value_length, dropout))
@@ -162,9 +163,8 @@ class Encoder(nn.Module):
         The forward pass of the Encoder.
         """
         x = self.embedder(x)
+        x = self.positionalencoding.forward(x)
         for layer in self.encoderlayers:
             x = layer.forward(x, src_mask)
-
         return x
         #raise NotImplementedError("Need to implement forward pass of Encoder")
-
